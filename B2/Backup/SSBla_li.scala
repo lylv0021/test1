@@ -23,7 +23,7 @@ object BlackList_Consumer {
       "value.deserializer" -> "org.apache.kafka.common.serialization.StringDeserializer"
     )
 
-    //4.¶ÁÈ¡KafkaÊı¾İ´´½¨DStream
+    //4.è¯»å–Kafkaæ•°æ®åˆ›å»ºDStream
     val kafkaDStream: InputDStream[ConsumerRecord[String, String]] = KafkaUtils.createDirectStream[String, String](scc,
       LocationStrategies.PreferConsistent,
       ConsumerStrategies.Subscribe[String, String](Set("atguigu1210"), kafkaPara))
@@ -31,10 +31,10 @@ object BlackList_Consumer {
       t => {
         t.value()
       }
-    )
-    //TODO ¶ÔºÚÃûµ¥ÖÜÆÚĞÔ±éÀú
-    //Èç¹û´ËÅú´ÎµÄÊı¾İÒÑ¾­ÔÚºÚÃûµ¥ÖĞ£¬¾Í½«Æä¹ıÂËµô£¬
-    // Èç¹ûÃ»ÓĞÔÚºÚÃûµ¥ÖĞ£¬ÔÙ¶ÔÊı¾İ½øĞĞ½øÒ»²½´¦Àí
+    )//Test
+    //TODO å¯¹é»‘åå•å‘¨æœŸæ€§éå†
+    //å¦‚æœæ­¤æ‰¹æ¬¡çš„æ•°æ®å·²ç»åœ¨é»‘åå•ä¸­ï¼Œå°±å°†å…¶è¿‡æ»¤æ‰ï¼Œ
+    // å¦‚æœæ²¡æœ‰åœ¨é»‘åå•ä¸­ï¼Œå†å¯¹æ•°æ®è¿›è¡Œè¿›ä¸€æ­¥å¤„ç†
     val ds2= ds.transform(
       rdd => {
         val blc_List = ListBuffer[String]()
@@ -72,15 +72,15 @@ object BlackList_Consumer {
       }
     )
     ds2.print()
-    //TODO ¶ÔÍ¬Ò»ÅúÊı¾İµÄĞÅÏ¢½øĞĞÉ¸Ñ¡
+    //TODO å¯¹åŒä¸€æ‰¹æ•°æ®çš„ä¿¡æ¯è¿›è¡Œç­›é€‰
     ds2.foreachRDD(
       rdd=>{
         rdd.foreach{
           case ((day,user,ad),count)=>{
             if(count>20){
-              //Í¬Ò»Åú´ÎµÄÊı¾İ
-              // Èç¹û×Üµã»÷Á¿
-              // ³¬³öÁËãĞÖµ£¬ÔòÖ±½ÓÀ­ÈëºÚÃûµ¥
+              //åŒä¸€æ‰¹æ¬¡çš„æ•°æ®
+              // å¦‚æœæ€»ç‚¹å‡»é‡
+              // è¶…å‡ºäº†é˜ˆå€¼ï¼Œåˆ™ç›´æ¥æ‹‰å…¥é»‘åå•
               var conn1=JdbcUtil.getConnect()
               val state1: PreparedStatement = conn1.prepareStatement(
                 """
@@ -93,17 +93,17 @@ object BlackList_Consumer {
             state1.executeUpdate()
               state1.close()
               conn1.close()
-            }else{//Èç¹ûÃ»ÓĞ³¬³öãĞÖµ£¬
+            }else{//å¦‚æœæ²¡æœ‰è¶…å‡ºé˜ˆå€¼ï¼Œ
               val conn2: Connection = JdbcUtil.getConnect()
               val state2: PreparedStatement = conn2.prepareStatement("select count  from user_ad_count where dt=? and userid=? and adid=?")
               state2.setString(1,day)
               state2.setString(2,user)
               state2.setString(3,ad)
               val rs2 = state2.executeQuery()
-              if(rs2.next()){// ¾ÍÅĞ¶ÏÔ­±íÖĞ¸ÃÊı¾İÊÇ·ñÒÑ¾­´æÔÚ£¬
-                //Èç¹û´æÔÚ
-                // ¾Í½«¸ÃÊı¾İµÄµã»÷ÊıÁ¿È¡³ö£¬
-                if((count+rs2.getLong(1))>20){ // Èç¹û¸ÃÖµÓëĞÂÔöµÄÊıÁ¿µÄºÍ³¬¹ıãĞÖµ£¬ÔòÀ­ÈëºÚÃûµ¥
+              if(rs2.next()){// å°±åˆ¤æ–­åŸè¡¨ä¸­è¯¥æ•°æ®æ˜¯å¦å·²ç»å­˜åœ¨ï¼Œ
+                //å¦‚æœå­˜åœ¨
+                // å°±å°†è¯¥æ•°æ®çš„ç‚¹å‡»æ•°é‡å–å‡ºï¼Œ
+                if((count+rs2.getLong(1))>20){ // å¦‚æœè¯¥å€¼ä¸æ–°å¢çš„æ•°é‡çš„å’Œè¶…è¿‡é˜ˆå€¼ï¼Œåˆ™æ‹‰å…¥é»‘åå•
                   var conn4=JdbcUtil.getConnect()
                   val state4: PreparedStatement = conn4.prepareStatement(
                     """insert into black_list(userid)  values(?)
@@ -115,7 +115,7 @@ object BlackList_Consumer {
                   state4.executeUpdate()
                   state4.close()
                   conn4.close()
-                }else{// Èç¹ûÃ»ÓĞ³¬¹ıãĞÖµ£¬¾ÍÕı³£¸üĞÂ¶ÔÓ¦µÄÊı¾İ
+                }else{// å¦‚æœæ²¡æœ‰è¶…è¿‡é˜ˆå€¼ï¼Œå°±æ­£å¸¸æ›´æ–°å¯¹åº”çš„æ•°æ®
 
                   val conn5: Connection = JdbcUtil.getConnect()
                   val state5: PreparedStatement = conn5.prepareStatement(
@@ -134,8 +134,8 @@ object BlackList_Consumer {
                   conn5.close()
                 }
               }else{
-                // Èç¹û²»´æÔÚ
-                // ½«¸ÃÊı¾İÕı³£²åÈë±íÖĞ
+                // å¦‚æœä¸å­˜åœ¨
+                // å°†è¯¥æ•°æ®æ­£å¸¸æ’å…¥è¡¨ä¸­
                 val conn6: Connection = JdbcUtil.getConnect()
                 val state6  = conn6.prepareStatement(
                   """
